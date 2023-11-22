@@ -112,7 +112,11 @@ func (s *SkipList[K, V]) adjustLevel(level int) {
 
 func (s *SkipList[K, V]) Insert(key K, value V) {
 	x := s.head
-	updates := make([]*Node[K, V], s.level+1)
+	var updates []*Node[K, V]
+
+	for i := 0; i <= s.level; i++ {
+		updates = append(updates, NewHeaderNode[K, V](s.level))
+	}
 
 	// For each level, store in "updates" the nodes that should precede the new node.
 	// In the loop, the search will start from the last found node; no need to restart from the head.
@@ -131,8 +135,8 @@ func (s *SkipList[K, V]) Insert(key K, value V) {
 
 		// Add new level.
 		if newLevel > s.level {
-			for i := s.level; i < newLevel; i++ {
-				updates = append(updates, s.head)
+			for i := s.level; i <= newLevel; i++ {
+				updates = append(updates, NewHeaderNode[K, V](newLevel))
 			}
 			s.adjustLevel(newLevel)
 		}
