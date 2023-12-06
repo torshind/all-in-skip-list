@@ -18,9 +18,10 @@ type Node[K cmp.Ordered, V any] struct {
 }
 
 type SkipList[K cmp.Ordered, V any] struct {
-	head  *Node[K, V]
-	level int
-	size  int
+	head     *Node[K, V]
+	level    int
+	size     int
+	maxLevel int
 }
 
 func (s *SkipList[K, V]) String() string {
@@ -58,11 +59,12 @@ func NewHeaderNode[K cmp.Ordered, V any](level int) *Node[K, V] {
 	}
 }
 
-func NewSkipList[K cmp.Ordered, V any]() *SkipList[K, V] {
+func NewSkipList[K cmp.Ordered, V any](maxLevel int) *SkipList[K, V] {
 	return &SkipList[K, V]{
-		head:  NewHeaderNode[K, V](0),
-		level: 0,
-		size:  0,
+		head:     NewHeaderNode[K, V](0),
+		level:    0,
+		size:     0,
+		maxLevel: maxLevel,
 	}
 }
 
@@ -98,11 +100,7 @@ func (s *SkipList[K, V]) Find(key K) (V, bool) {
 }
 
 func (s *SkipList[K, V]) getRandomLevel() int {
-	// level := 0
-	// for rand.Int31()%2 == 0 {
-	// 	level += 1
-	// }
-	return bits.TrailingZeros64(rand.Uint64())
+	return bits.TrailingZeros64(rand.Uint64() | ^((1 << uint64(s.maxLevel-1)) - 1))
 }
 
 func (s *SkipList[K, V]) adjustLevel(level int) {

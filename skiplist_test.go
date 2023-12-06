@@ -2,13 +2,63 @@ package skiplist
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
+	"slices"
 	"sync"
 	"testing"
 )
 
+func TestGetRandomLevel(t *testing.T) {
+	list := NewSkipList[int, float64](16)
+	data := make([]int, 10e6)
+
+	for i := range data {
+		data[i] = list.getRandomLevel()
+	}
+
+	n := slices.Max(data)
+
+	// Compute the observed frequency distribution
+	observed := make([]int, n+1)
+	for _, v := range data {
+		observed[v]++
+	}
+	slices.Reverse(observed)
+	fmt.Println(observed)
+
+	var totalError, totalRelativeError float64
+
+	for i := 1; i < len(observed); i++ {
+		// Calculate the expected value (double the previous element)
+		expected := 2 * observed[i-1]
+
+		if expected != 0 && observed[i] != 0 {
+			// Calculate the absolute error
+			error := math.Abs(float64(observed[i] - expected))
+
+			// Calculate the relative error
+			relativeError := error / float64(observed[i-1])
+
+			// Accumulate the errors
+			totalError += error
+			totalRelativeError += relativeError
+
+			// Output information for each pair
+			fmt.Printf("Element %d: %d, Expected: %d, Absolute Error: %.6e, Relative Error: %.6e\n", i, observed[i], expected, error, relativeError)
+		}
+	}
+
+	// Calculate the average relative error
+	averageRelativeError := totalRelativeError / float64(len(observed)-1)
+
+	// Output the total error and average relative error
+	fmt.Printf("\nTotal Error: %.6e\n", totalError)
+	fmt.Printf("Average Relative Error: %.6e\n", averageRelativeError)
+}
+
 func TestInsert(t *testing.T) {
-	list := NewSkipList[int, float64]()
+	list := NewSkipList[int, float64](32)
 
 	list.Insert(1, 0.2)
 	list.Insert(0, 0.1)
@@ -28,7 +78,7 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertParallel(t *testing.T) {
-	list := NewSkipList[int, float64]()
+	list := NewSkipList[int, float64](32)
 	var mutex sync.Mutex
 
 	insertValues := func(numElements int, done chan<- error) {
